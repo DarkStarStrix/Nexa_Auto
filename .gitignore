@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.env.*
+*.env
+*.egg-info/
+dist/
+build/
+*.log
+Tune.log
+
+# Go
+/go_cli/bin/
+/go_cli/pkg/
+/go_cli/*.exe
+/go_cli/*.test
+/go_cli/go.sum
+
+# OS/Editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
