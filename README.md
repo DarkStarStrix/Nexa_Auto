@@ -1,118 +1,130 @@
 # Nexa Auto
 
-**Nexa Auto** is a session-aware, developer-centric CLI orchestration engine for fine-tuning Hugging Face-compatible models. It abstracts away ML infrastructure pain while preserving power-user control, making repeatable, portable, and secure LLM fine-tuning as simple as a single command.
+**Nexa Auto** is your all-in-one, session-aware CLI and TUI tool for fine-tuning Hugging Face-compatible models. It makes secure, repeatable, and portable LLM fine-tuning as simple as following a guided workflow—no notebooks, no cloud lock-in, no headaches.
 
 ---
 
-## 🚀 Features
+## Why Nexa Auto?
 
-- **CLI-first, infra-aware:** Rich terminal UI, hardware detection, and resource validation.
-- **Session-aware token management:** Secure, in-memory Hugging Face token handling via a local session server.
-- **Minimal config:** Only model, dataset, and output name are required; everything else is auto-inferred.
-- **Local and remote training:** Train on your local GPU, or (future) launch jobs on remote APIs or SSH nodes.
-- **LoRA/PEFT support:** Out-of-the-box support for LoRA adapters and quantized training.
-- **Reproducible artifacts:** All outputs are ready for Hugging Face Hub upload.
-- **No notebooks required:** Run and manage experiments entirely from the CLI.
-
----
-
-## 🧑‍💻 Use Cases
-
-- **Domain adaptation:** Fine-tune open LLMs (e.g., Mistral, Llama) on your own scientific, legal, or business datasets.
-- **Research workflows:** Run repeatable, isolated experiments without Jupyter or cloud lock-in.
-- **Infra abstraction:** Seamlessly switch between local, SSH, or (future) cloud API training.
-- **Secure collaboration:** Share models and configs without leaking tokens or credentials.
+- **CLI & TUI:** Choose your interface—modern terminal UI (Go/BubbleTea) or a sleek CLI (Python Rich).
+- **Secure by design:** Your Hugging Face token is kept in memory, never written to disk.
+- **Guided workflow:** Select model, dataset, and output step-by-step.
+- **Hardware smart:** Detects and displays your CPU/GPU resources.
+- **LoRA/PEFT ready:** Efficient adapter-based fine-tuning out of the box.
+- **Extensible:** Modular for new training modes, hardware checks, and logging.
 
 ---
 
-## ⚡ Quickstart
+## Installation
 
+**Requirements:**
+- Python 3.8+ (backend & CLI)
+- Go 1.18+ (for TUI, optional)
+- CUDA GPU (recommended)
+- Hugging Face access token
+
+**Get started:**
 ```bash
-# Install dependencies
+git clone https://github.com/your-org/nexa-auto.git
+cd nexa-auto
 pip install -r requirements.txt
-
-# Start the CLI
-python cli.py
-
-# Example: Fine-tune a model
-# (Follow the interactive prompts for model, dataset, and output name)
+# (Optional) For TUI:
+cd go_cli
+go mod tidy
 ```
 
 ---
 
-## 🛠️ Assumptions
+## Quickstart
 
-- You have Python 3.8+ and a CUDA-capable GPU (for local training).
-- You have a valid Hugging Face access token.
-- Your dataset is either on the Hugging Face Hub or in a local JSON/text format.
-- For remote/API/SSH modes, you have network access and credentials (future).
+1. **Start the session server:**
+   ```bash
+   python session_server.py
+   ```
+2. **Launch your interface:**
+   - **CLI:** `python cli.py`
+   - **TUI:** `cd go_cli && go run main.go`
+3. **Follow the prompts:**
+   - Enter your Hugging Face token (first run)
+   - Pick your base model and dataset
+   - Name your output
+   - Confirm hardware
+   - Start training!
+4. **Monitor progress:**  
+   Watch logs and training status live in your chosen interface.
 
 ---
 
-## 🏗️ Project Structure
+## How It Works
+
+- **Session Server:** Local FastAPI server keeps your Hugging Face token safe in memory.
+- **CLI/TUI:** Guides you through model/dataset/output selection and training.
+- **Trainer Backend:** Handles model loading, tokenization, LoRA/PEFT, and artifact saving.
+
+---
+
+## Project Structure
 
 ```
 nexa_auto/
-├── cli.py              # Main CLI entrypoint and orchestration
-├── session_server.py   # Local Flask server for secure token storage
-├── config.py           # Config class for model/dataset/params (future)
-├── trainer.py          # Training logic (future)
-├── hardware.py         # Hardware detection (future)
-├── remote.py           # Remote/SSH/API logic (future)
-├── logging.py          # Logging utilities (future)
-├── requirements.txt
-├── README.md
-└── doc.md
+├── cli.py              # Python CLI (Rich)
+├── session_server.py   # Secure token server (FastAPI)
+├── trainer_server.py   # Training backend (REST)
+├── go_cli/             # Go TUI (BubbleTea)
+├── doc.md              # Technical docs
+└── README.md
 ```
 
 ---
 
-## 🧩 Key Design Principles
+## Security
 
-- **Stateful, repeatable, isolated:** Each session is secure and reproducible.
-- **CLI-first, notebook-free:** No Jupyter required.
-- **Minimal config, maximal power:** Only specify what matters.
-- **Portable and hackable:** Open, extensible, and not cloud-locked.
-
----
-
-## 📦 Outputs
-
-- `adapter_model.safetensors`
-- `adapter_config.json`
-- `tokenizer.json` and config
-- `training_args.bin`
-- Logs and metrics
+- **No secrets on disk:** Tokens are only in memory, encrypted.
+- **Local-only:** Session server listens only on localhost.
+- **Clear on exit:** Tokens wiped at session end or on request.
 
 ---
 
-## 🔒 Security
+## Example Workflow
 
-- Hugging Face tokens are never written to disk; they're stored encrypted in memory via the session server.
-- Tokens are cleared at session end or on demand.
+```bash
+python session_server.py
+python cli.py
+# or
+cd go_cli && go run main.go
+```
+- Authenticate with your Hugging Face token.
+- Select model, dataset, and output name.
+- Confirm hardware.
+- Start and monitor training.
+- Retrieve your fine-tuned model—ready for Hugging Face Hub!
 
 ---
 
-## 🧠 Why Nexa Auto?
+## Extending Nexa Auto
 
-- **Open-source alternative** to cloud-locked tools like AutoTrain.
-- **Transparent and extensible** for research and production.
-- **Scales with you**: from local dev to remote clusters.
+- Add new training modes: edit `remote.py` and update the UI.
+- Add hardware checks: extend `hardware.py`.
+- Add logging/metrics: hook into `logging.py`.
 
 ---
 
-## 📝 License
+## Documentation
+
+See [doc.md](./doc.md) for full technical details, architecture, and extension notes.
+
+---
+
+## Contributing
+
+We welcome issues, feature requests, and PRs!  
+Open an issue or pull request to get involved.
+
+---
+
+## License
 
 MIT License. See [LICENSE](LICENSE).
 
 ---
 
-## 🤝 Contributing
-
-Contributions, issues, and feature requests are welcome! Please open an issue or PR.
-
----
-
-## 📚 Documentation
-
-See [doc.md](./doc.md) for a technical overview and developer notes.

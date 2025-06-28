@@ -1,103 +1,188 @@
-# Nexa Auto: Technical Documentation
+# Nexa Auto: Fine-Tuning Made Simple
 
-## Overview
-
-**Nexa Auto** is a CLI-first, session-aware fine-tuning engine for Hugging Face models. It is designed to make LLM fine-tuning repeatable, secure, and portable, with minimal configuration and maximum transparency. Nexa Auto abstracts away infrastructure complexity while giving developers full control over their training workflows.
+**Nexa Auto** is a developer-first tool for fine-tuning Hugging Face-compatible language models. It provides a secure, session-aware workflow that abstracts away infrastructure complexity, letting you focus on model and data selection while ensuring your secrets are never written to disk.
 
 ---
 
-## How It Works
+## What is Nexa Auto?
 
-### 1. Session Server
-
-- A lightweight Flask server (`session_server.py`) runs in the background.
-- It securely stores your Hugging Face token in memory (never on disk), encrypted with Fernet.
-- The CLI communicates with this server to fetch, set, or clear the token as needed.
-
-### 2. CLI Orchestration
-
-- The CLI (`cli.py`) provides a rich, interactive terminal interface using [Rich](https://github.com/Textualize/rich).
-- On first run, it prompts for your Hugging Face token and stores it securely for the session.
-- You select the base model, dataset, and output name via prompts.
-- Hardware is auto-detected (GPU/CPU) and displayed for transparency.
-- The CLI supports multiple modes (local, remote API, SSH), with local training implemented and others scaffolded for future extension.
-
-### 3. Training Pipeline
-
-- The CLI loads the selected model and dataset, applies tokenization, and configures the Hugging Face Trainer.
-- LoRA/PEFT support is built-in for efficient adapter-based fine-tuning.
-- Training outputs are saved in a format ready for Hugging Face Hub upload.
-
-### 4. Security
-
-- Tokens are never written to disk.
-- Tokens are cleared at session end or on user request.
-- All secrets are handled in-memory and over localhost only.
+Nexa Auto is a CLI and TUI (Terminal User Interface) application that orchestrates the entire fine-tuning process for LLMs (Large Language Models) using Hugging Face libraries.
+It is designed for both beginners and advanced users who want a repeatable, portable, and secure way to fine-tune models on their own hardware or, in the future, on remote/cloud resources.
 
 ---
 
-## Key Components
+## Key Features
 
-- **cli.py**: Main CLI entrypoint and orchestration logic.
-- **session_server.py**: Secure, in-memory token management.
-- **config.py**: (Planned) Central config for all run parameters.
-- **trainer.py**: (Planned) Modular training logic, LoRA/PEFT integration.
-- **hardware.py**: (Planned) Hardware detection and validation.
-- **remote.py**: (Planned) Remote/SSH/API training orchestration.
-- **logging.py**: (Planned) Structured logging and metrics.
+- **Session-aware token management:** Your Hugging Face token is stored securely in memory, never on disk.
+- **Interactive CLI/TUI:** Choose between a modern TUI (Go/BubbleTea) or a sleek CLI (Python Rich) for orchestration.
+- **Guided workflow:** Step-by-step selection of model, dataset, and output configuration.
+- **Hardware detection:** Automatically detects and displays available CPU/GPU resources.
+- **LoRA/PEFT support:** Efficient adapter-based fine-tuning out of the box.
+- **Extensible:** Modular design for adding new training modes, hardware checks, and logging.
+
+---
+
+## How Nexa Auto Works
+
+### 1. Session Server (`session_server.py`)
+- Runs locally using FastAPI.
+- Manage your Hugging Face token in memory, encrypted with AES-GCM.
+- CLI/TUI communicates with this server to fetch, set, or clear your token.
+
+### 2. User Interface (CLI/TUI)
+- **Python CLI (`cli.py`):** Uses Python Rich for a command-line experience.
+- **Go TUI (`go_cli/main.go`):** Uses BubbleTea for a modern terminal UI.
+- On the first run, prompts for your Hugging Face token and stores it securely for the session.
+- Guides you through:
+  - Selecting a base model (from Hugging Face Hub or local path)
+  - Choosing a dataset (from Hugging Face Hub or local file)
+  - Naming your output model
+  - Confirming hardware resources
+- Supports switching between TUI and CLI modes.
+
+### 3. Training Backend (`trainer_server.py`)
+- Exposes a REST API for launching and monitoring training jobs.
+- Loads the selected model and dataset, applies tokenization, and configures the Hugging Face Trainer.
+- Supports LoRA/PEFT for efficient fine-tuning.
+- Saves outputs ready for Hugging Face Hub upload.
+
+---
+
+## Quick Start Guide
+
+### 1. Prerequisites
+
+- Python 3.8+ (for backend and CLI)
+- Go 1.18+ (for TUI, optional)
+- CUDA-capable GPU (recommended for local training)
+- Valid Hugging Face access token
+- Dataset available on Hugging Face Hub or as a local file
+
+### 2. Installation
+
+Clone the repository:
+
+```sh
+git clone https://github.com/your-org/nexa-auto.git
+cd nexa-auto
+```
+
+Install Python dependencies:
+
+```sh
+pip install -r requirements.txt
+```
+
+(Optional) Install Go dependencies for TUI:
+
+```sh
+cd go_cli
+go mod tidy
+```
+
+### 3. Start the Session Server
+
+```sh
+python session_server.py
+```
+
+This will start a local FastAPI server to securely manage your Hugging Face token.
+
+### 4. Launch the Interface
+
+#### Python CLI
+
+```sh
+python cli.py
+```
+
+#### Go TUI
+
+```sh
+cd go_cli
+go run main.go
+```
+
+### 5. Follow the Prompts
+
+- Enter your Hugging Face token (prompted on first run)
+- Select your base model and dataset
+- Name your output model
+- Confirm detected hardware (CPU/GPU)
+- Start training
+
+### 6. Monitor Progress
+
+- View logs and training progress in the interface.
+- Retrieve output artifacts for upload to Hugging Face Hub.
 
 ---
 
 ## Example Workflow
 
-1. Run `python cli.py`
-2. Enter your Hugging Face token (stored securely for the session)
-3. Select model, dataset, and output name
-4. Confirm hardware and start training
-5. Artifacts are saved and ready for upload
+1. **Start the session server:**  
+   `python session_server.py`
+2. **Run the CLI or TUI:**  
+   `python cli.py` or `go run main.go`
+3. **Authenticate:**  
+   Enter your Hugging Face token when prompted.
+4. **Configure training:**  
+   Select model, dataset, and output name.
+5. **Review hardware:**  
+   Confirm detected resources.
+6. **Start and monitor training:**  
+   Watch logs and progress in real time.
+7. **Retrieve outputs:**  
+   Find your fine-tuned model ready for upload.
+
+---
+
+## Security Model
+
+- **No secrets on disk:** Tokens are only stored in memory, never written to disk.
+- **Local-only server:** The session server only listens to localhost.
+- **Clear on exit:** Tokens are cleared at session end or on user request.
 
 ---
 
 ## Extending Nexa Auto
 
-- Add new training modes by implementing in `remote.py` and updating the CLI menu.
-- Add new hardware checks in `hardware.py`.
-- Add new logging or metrics hooks in `logging.py`.
-- All core logic is modular and ready for extension.
-
----
-
-## Assumptions
-
-- Python 3.8+ and a CUDA-capable GPU for local training.
-- A valid Hugging Face access token.
-- Dataset is on Hugging Face Hub or in a local JSON/text format.
-- For remote/API/SSH modes, you have network access and credentials (future).
-
----
-
-## Security Notes
-
-- All token handling is local and in-memory.
-- No secrets are printed or stored on disk.
-- The session server is local-only and cleared on demand or exit.
+- **Add new training modes:** Implement in `remote.py` and update the UI menu.
+- **Add hardware checks:** Extend `hardware.py`.
+- **Add logging/metrics:** Hook into `logging.py`.
+- **Modular design:** All components are ready for extension.
 
 ---
 
 ## Roadmap
 
-- [ ] Add Docker support
-- [ ] Add remote/cloud training
-- [ ] Add advanced logging and metrics
-- [ ] Add model card auto-generation
+- [ ] Docker support for reproducible training
+- [ ] Remote/cloud training (Kaggle, SSH, etc.)
+- [ ] Advanced logging and metrics
+- [ ] Model card auto-generation
+- [ ] Web UI (future)
 
 ---
 
-## Support
+## Troubleshooting & Support
 
-For issues, feature requests, or contributions, please open an issue or PR on the [GitHub repository](https://github.com/your-org/nexa-auto).
+- If you encounter issues, check the logs in the interface.
+- For feature requests or bug reports, open an issue or PR on [GitHub](https://github.com/your-org/nexa-auto).
 
 ---
-````
 
-</file>
+## FAQ
+
+**Q: Is my Hugging Face token safe?**  
+A: Yes.
+It is only stored in memory, encrypted, and never written to disk.
+
+**Q: Can I use my own dataset?**  
+A: Yes. You can select a local file or a dataset from the Hugging Face Hub.
+
+**Q: Can I run this on a remote server?**  
+A: Remote/SSH/API modes are planned for future releases.
+
+---
+
+**Nexa Auto** — Secure, repeatable, and developer-friendly fine-tuning for LLMs.
