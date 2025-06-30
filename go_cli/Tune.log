@@ -1,0 +1,97 @@
+[2025-06-30 12:02:46] Started fine-tune session
+[2025-06-30 12:02:46] Backend health checked: Backend not available: Get "http://localhost:8000/health": dial tcp [::1]:8000: connectex: No connection could be made because the target machine actively refused it.
+[2025-06-30 12:02:50] Exited fine-tune session
+[2025-06-30 12:05:25] Started fine-tune session
+[2025-06-30 12:05:25] Backend health checked: Backend not available: Get "http://localhost:8000/health": dial tcp [::1]:8000: connectex: No connection could be made because the target machine actively refused it.
+[2025-06-30 12:05:31] Exited fine-tune session
+[2025-06-30 12:45:34] Started fine-tune session
+[2025-06-30 12:45:34] Backend health checked: Backend not available: Get "http://localhost:8000/health": dial tcp [::1]:8000: connectex: No connection could be made because the target machine actively refused it.
+[2025-06-30 12:45:42] Exited fine-tune session
+[2025-06-30 14:16:06] Started fine-tune session
+[2025-06-30 14:16:06] Backend health checked: Backend not available: Get "http://localhost:8000/health": dial tcp [::1]:8000: connectex: No connection could be made because the target machine actively refused it.
+[2025-06-30 14:16:07] Exited fine-tune session
+[2025-06-30 14:25:13] Started fine-tune session
+[2025-06-30 14:25:13] Backend health checked: Backend not available: Get "http://localhost:8000/health": dial tcp [::1]:8000: connectex: No connection could be made because the target machine actively refused it.
+[2025-06-30 14:25:41] Exited fine-tune session
+Launching CLI mode (cli.py)
+[2025-06-30 14:30:10] Started fine-tune session
+Backend health checked: Backend not available: Get "http://localhost:8765/health": dial tcp [::1]:8765: connectex: No connection could be made because the target machine actively refused it.
+[2025-06-30 14:30:10] Backend health checked: Backend not available: Get "http://localhost:8765/health": dial tcp [::1]:8765: connectex: No connection could be made because the target machine actively refused it.
+[2025-06-30 14:31:08] Prompted for Hugging Face token
+Launching CLI mode (cli.py)
+[2025-06-30 14:42:21] Started fine-tune session
+Backend health checked: {"status":"ok","components":{"session_server":"ok","trainer":"ok"},"timestamp":"2025-06-30 14:42:21"} (endpoint: http://localhost:8770/health)
+[2025-06-30 14:42:21] Backend health checked: {"status":"ok","components":{"session_server":"ok","trainer":"ok"},"timestamp":"2025-06-30 14:42:21"}
+[2025-06-30 14:42:38] Exited fine-tune session
+[2025-06-30 15:35:59] Started fine-tune session
+Backend health checked: Backend not available: Get "http://localhost:8765/health": dial tcp [::1]:8765: connectex: No connection could be made because the target machine actively refused it.
+[2025-06-30 15:35:59] Backend health checked: Backend not available: Get "http://localhost:8765/health": dial tcp [::1]:8765: connectex: No connection could be made because the target machine actively refused it.
+[2025-06-30 15:36:03] Exited fine-tune session
+[2025-06-30 15:36:57] Started fine-tune session
+Backend health checked: {"status":"ok","components":{"session_server":"ok","trainer":"ok"},"timestamp":"2025-06-30 15:36:57"} (endpoint: http://localhost:8770/health)
+[2025-06-30 15:36:57] Backend health checked: {"status":"ok","components":{"session_server":"ok","trainer":"ok"},"timestamp":"2025-06-30 15:36:57"}
+[2025-06-30 15:37:08] Exited fine-tune session
+[2025-06-30 15:37:26] Started fine-tune session
+Backend health checked: {"status":"ok","components":{"session_server":"ok","trainer":"ok"},"timestamp":"2025-06-30 15:37:26"} (endpoint: http://localhost:8770/health)
+[2025-06-30 15:37:26] Backend health checked: {"status":"ok","components":{"session_server":"ok","trainer":"ok"},"timestamp":"2025-06-30 15:37:26"}
+[2025-06-30 15:38:49] Exited fine-tune session
+[2025-06-30 15:41:55] Started fine-tune session
+Backend health checked: {"status":"ok","components":{"session_server":"ok","trainer":"ok"},"timestamp":"2025-06-30 15:41:56"} (endpoint: http://localhost:8770/health)
+[2025-06-30 15:41:56] Backend health checked: {"status":"ok","components":{"session_server":"ok","trainer":"ok"},"timestamp":"2025-06-30 15:41:56"}
+[2025-06-30 15:42:00] Exited fine-tune session
+[2025-06-30 15:42:14] Started fine-tune session
+Backend health checked: {"status":"ok","components":{"session_server":"ok","trainer":"ok"},"timestamp":"2025-06-30 15:42:14"} (endpoint: http://localhost:8770/health)
+[2025-06-30 15:42:14] Backend health checked: {"status":"ok","components":{"session_server":"ok","trainer":"ok"},"timestamp":"2025-06-30 15:42:14"}
+[2025-06-30 15:42:20] Exited fine-tune session
+[2025-06-30 15:43:24] Started fine-tune session
+Backend health checked: {"status":"ok","components":{"session_server":"ok","trainer":"ok"},"timestamp":"2025-06-30 15:43:24"} (endpoint: http://localhost:8770/health)
+[2025-06-30 15:43:24] Backend health checked: {"status":"ok","components":{"session_server":"ok","trainer":"ok"},"timestamp":"2025-06-30 15:43:24"}
+[2025-06-30 15:44:23] Exited fine-tune session
+[2025-06-30 15:45:04] Started fine-tune session
+[2025-06-30 15:46:47] Exited fine-tune session
+[2025-06-30 15:52:47] Started fine-tune session
+[2025-06-30 15:53:03] Exited fine-tune session
+[2025-06-30 15:53:14] Started fine-tune session
+[2025-06-30 15:55:14] Exited fine-tune session
+[2025-06-30 15:56:30] Started fine-tune session
+[2025-06-30 15:58:23] Exited fine-tune session
+[2025-06-30 15:58:24] Started fine-tune session
+[2025-06-30 15:58:43] Exited fine-tune session
+[2025-06-30 15:58:50] Started fine-tune session
+[2025-06-30 16:00:33] Exited fine-tune session
+[2025-06-30 16:00:41] Started fine-tune session
+[2025-06-30 16:01:37] Exited fine-tune session
+[2025-06-30 16:01:39] Started fine-tune session
+[2025-06-30 16:02:10] Exited fine-tune session
+[2025-06-30 16:02:20] Started fine-tune session
+[2025-06-30 16:04:06] Exited fine-tune session
+[2025-06-30 16:04:52] Started fine-tune session
+[2025-06-30 16:06:52] Started fine-tune session
+[2025-06-30 16:10:26] Started fine-tune session
+[2025-06-30 16:10:37] Exited fine-tune session
+[2025-06-30 16:10:58] Started fine-tune session
+[2025-06-30 16:10:59] Exited fine-tune session
+[2025-06-30 16:11:45] Started fine-tune session
+[2025-06-30 16:11:58] Exited fine-tune session
+[2025-06-30 16:13:39] Started fine-tune session
+[2025-06-30 16:16:46] Exited fine-tune session
+[2025-06-30 16:16:57] Started fine-tune session
+[2025-06-30 16:17:22] Exited fine-tune session
+[2025-06-30 16:17:38] Started fine-tune session
+[2025-06-30 16:17:59] Pinging backend...
+Backend health checked: {"status":"ok","components":{"session_server":"ok","trainer":"ok"},"timestamp":"2025-06-30 16:17:59"} (endpoint: http://localhost:8770/health)
+[2025-06-30 16:17:59] Backend health checked: {"status":"ok","components":{"session_server":"ok","trainer":"ok"},"timestamp":"2025-06-30 16:17:59"}
+[2025-06-30 16:19:16] Exited fine-tune session
+[2025-06-30 17:09:19] Started fine-tune session
+[2025-06-30 17:09:40] Pinging backend...
+Backend health checked: {"status":"ok","components":{"session_server":"ok","trainer":"ok"},"timestamp":"2025-06-30 17:09:40"} (endpoint: http://localhost:8770/health)
+[2025-06-30 17:09:40] Backend health checked: {"status":"ok","components":{"session_server":"ok","trainer":"ok"},"timestamp":"2025-06-30 17:09:40"}
+[2025-06-30 17:09:48] Exited fine-tune session
+[2025-06-30 17:12:14] Started fine-tune session, pinging backend...
+Backend health checked: {"status":"ok","components":{"session_server":"ok","trainer":"ok"},"timestamp":"2025-06-30 17:12:14"} (endpoint: http://localhost:8770/health)
+[2025-06-30 17:12:14] Backend health checked: {"status":"ok","components":{"session_server":"ok","trainer":"ok"},"timestamp":"2025-06-30 17:12:14"}
+[2025-06-30 17:15:20] Exited fine-tune session
+[2025-06-30 17:17:02] Started fine-tune session, pinging backend...
+Backend health checked: {"status":"ok","components":{"session_server":"ok","trainer":"ok"},"timestamp":"2025-06-30 17:17:02"} (endpoint: http://localhost:8770/health)
+[2025-06-30 17:17:02] Backend health checked: {"status":"ok","components":{"session_server":"ok","trainer":"ok"},"timestamp":"2025-06-30 17:17:02"}
+[2025-06-30 17:17:17] Exited fine-tune session

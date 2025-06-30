@@ -1,10 +1,13 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"os/exec"
 	"strings"
 	"time"
 
@@ -49,6 +52,7 @@ const (
 	outputName
 	confirmRun
 	modeSelect
+	clearLogs
 )
 
 var (
@@ -94,6 +98,7 @@ type model struct {
 	showLog         bool
 	loadingMenu     bool
 	cliStyle        lipgloss.Style
+    local           bool
 }
 
 // --- Model Initialization ---
@@ -112,9 +117,6 @@ func initialModel() model {
 
 // --- Bubbletea Init ---
 func (m model) Init() tea.Cmd {
-	if m.state == fineTune && m.loading {
-		return tea.Batch(checkBackendHealth, tickLoading())
-	}
 	return nil
 }
 
@@ -150,6 +152,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+// Add this helper to return to main menu after a delay
+func returnToMainMenuAfterDelay() tea.Cmd {
+	return func() tea.Msg {
+		time.Sleep(2 * time.Second)
+		return menuLoadedMsg{}
+	}
+}
+
 // --- TUI Update ---
 func (m model) updateTUI(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch m.state {
@@ -160,9 +170,22 @@ func (m model) updateTUI(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		case "k", "up":
 			m.menuIdx = (m.menuIdx + len(modeOptions) - 1) % len(modeOptions)
 		case "enter":
-			m.mode = m.menuIdx
-			m.state = mainMenu
-			m.menuIdx = 0
+			if m.menuIdx == 0 { // TUI Mode
+				m.state = mainMenu
+				m.menuIdx = 0
+				return m, nil
+			} else { // CLI Mode
+				appendLogFile("Launching CLI mode (cli.py)")
+				go func() {
+					cmd := exec.Command("python", "cli.py")
+					cmd.Stdout = os.Stdout
+					cmd.Stderr = os.Stderr
+					cmd.Stdin = os.Stdin
+					_ = cmd.Run()
+					os.Exit(0)
+				}()
+				return m, tea.Quit
+			}
 		case "q", "ctrl+c":
 			return m, tea.Quit
 		}
@@ -179,22 +202,24 @@ func (m model) updateTUI(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.loadingFrame = 0
 			switch m.menuIdx {
 			case 0:
+				// Transition to fineTune state and immediately trigger backend ping
 				m.state = fineTune
 				m.loading = true
-				m.appendLog("Started fine-tune session")
-				return m, tea.Batch(checkBackendHealth, tickLoading(), tickMenuLoading())
+				m.backendStatus = "pending" // Mark ping as in progress
+				m.appendLog("Started fine-tune session, pinging backend...")
+				return m, checkBackendHealthCmd()
 			case 1:
 				m.state = logs
 				m.showLog = true
 				m.logs = loadLogs()
-				return m, tickMenuLoading()
+				return m, nil
 			case 2:
 				m.state = help
-				return m, tickMenuLoading()
+				return m, nil
 			case 3:
 				m.state = tokenMenu
 				m.tokenStatus = ""
-				return m, tickMenuLoading()
+				return m, nil
 			}
 		case "esc":
 			m.state = modeSelect
@@ -222,23 +247,52 @@ func (m model) updateTUI(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			return m, setToken(m.tokenInput)
 		}
 	case fineTune:
+		// Allow ESC to exit anytime
 		if msg.String() == "esc" || msg.String() == "q" {
 			m.state = mainMenu
 			m.backendStatus = ""
-			m.loading = false
+			m.tokenStatus = ""
+			m.tokenInput = ""
 			m.appendLog("Exited fine-tune session")
 			return m, nil
 		}
-		if !m.loading && m.backendStatus != "" && !strings.Contains(m.backendStatus, "Token:") {
-			m.state = tokenMenu
-			m.tokenStatus = "No HF token found. Please set your Hugging Face token.\n"
-			m.appendLog("Prompted for Hugging Face token")
+		// If no ping has been initiated, immediately ping the backend.
+		if m.backendStatus == "" {
+			m.appendLog("Pinging backend...")
+			m.backendStatus = "pending"
+			return m, checkBackendHealthCmd()
+		}
+		// While backend ping is pending, keep ticking.
+		if m.backendStatus == "pending" {
+			return m, tickLoading()
+		}
+		// Once ping returns (backendStatus is not "pending") and no token prompt yet, set tokenStatus.
+		if m.tokenStatus == "" {
+			if strings.Contains(m.backendStatus, `"status":"ok"`) {
+				m.tokenStatus = "Enter your Hugging Face token:"
+			} else {
+				m.tokenStatus = "Backend unavailable. Press ESC to return."
+			}
 			return m, nil
 		}
-		if !m.loading && m.backendStatus != "" && strings.Contains(m.backendStatus, "Token:") {
+		// Handle token input if healthy.
+		if m.tokenStatus == "Enter your Hugging Face token:" {
+			if msg.Type == tea.KeyRunes {
+				m.tokenInput += msg.String()
+				return m, nil
+			}
+			if msg.Type == tea.KeyEnter && m.tokenInput != "" {
+				return m, setToken(m.tokenInput)
+			}
+		}
+		// When token is set successfully, switch to model selection.
+		if m.tokenStatus == "Token set successfully" {
 			m.state = modelSelect
 			m.menuIdx = 0
-			m.appendLog("Backend ready, proceeding to model selection")
+			m.backendStatus = ""
+			m.tokenStatus = ""
+			m.tokenInput = ""
+			m.appendLog("Token set, proceeding to model selection")
 			return m, nil
 		}
 	case modelSelect:
@@ -291,6 +345,7 @@ func (m model) updateTUI(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		case "y":
 			m.confirmMsg = "[TODO] Launching fine-tune job..."
 			m.appendLog("Confirmed fine-tune run")
+			return m, sendTrainRequest(m)
 		case "n", "esc":
 			m.state = mainMenu
 		}
@@ -303,6 +358,14 @@ func (m model) updateTUI(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.state = mainMenu
 			m.showLog = false
 		}
+		if msg.String() == "c" {
+			m.state = clearLogs
+			return m, clearLogFile()
+		}
+	case clearLogs:
+		m.state = logs
+		m.logs = loadLogs()
+		return m, nil
 	}
 	return m, nil
 }
@@ -391,18 +454,84 @@ type tickMsg struct{}
 type menuLoadedMsg struct{}
 type tickMenuMsg struct{}
 
+type TrainRequest struct {
+	Model   string `json:"model"`
+	Dataset string `json:"dataset"`
+	Output  string `json:"output"`
+	Local   bool   `json:"local"`
+}
+
+type TrainResponse struct {
+	JobID string `json:"job_id"`
+}
+
+func sendTrainRequest(m model) tea.Cmd {
+	return func() tea.Msg {
+		trainRequest := TrainRequest{
+			Model:   modelOptions[m.selectedModel],
+			Dataset: datasetOptions[m.selectedDataset],
+			Output:  m.outputName,
+			Local:   m.local,
+		}
+		jsonData, err := json.Marshal(trainRequest)
+		if err != nil {
+			return backendHealthMsg(fmt.Sprintf("Error marshaling JSON: %v", err))
+		}
+
+		resp, err := http.Post("http://localhost:8770/train", "application/json", bytes.NewBuffer(jsonData))
+		if err != nil {
+			return backendHealthMsg(fmt.Sprintf("Error sending request: %v", err))
+		}
+		defer resp.Body.Close()
+
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return backendHealthMsg(fmt.Sprintf("Error reading response: %v", err))
+		}
+
+		var trainResponse TrainResponse
+		err = json.Unmarshal(body, &trainResponse)
+		if err != nil {
+			return backendHealthMsg(fmt.Sprintf("Error unmarshaling response: %v", err))
+		}
+
+		return backendHealthMsg(fmt.Sprintf("Training job started with job ID: %s", trainResponse.JobID))
+	}
+}
+
 // --- Backend Health Check ---
+// Simplify to use a single known endpoint for quick ping.
 func checkBackendHealth() tea.Msg {
-	resp, err := http.Get("http://localhost:8000/health")
+	const endpoint = "http://localhost:8770/health"
+	resp, err := http.Get(endpoint)
 	if err != nil {
-		return backendHealthMsg("Backend not available: " + err.Error())
+		msg := fmt.Sprintf("Backend not available: %v", err)
+		appendLogFile("Backend health checked: " + msg)
+		return backendHealthMsg(msg)
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		msg := fmt.Sprintf("Unexpected status code %d from %s", resp.StatusCode, endpoint)
+		appendLogFile("Backend health checked: " + msg)
+		return backendHealthMsg(msg)
+	}
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return backendHealthMsg("Error reading response: " + err.Error())
+		msg := fmt.Sprintf("Error reading response: %v", err)
+		appendLogFile("Backend health checked: " + msg)
+		return backendHealthMsg(msg)
 	}
+	// This is what we expect:
+	// Backend health checked: {"status":"ok","components":{"session_server":"ok","trainer":"ok"},"timestamp":"..."} (endpoint: http://localhost:8770/health)
+	logMsg := fmt.Sprintf("Backend health checked: %s (endpoint: %s)", string(body), endpoint)
+	appendLogFile(logMsg)
 	return backendHealthMsg(string(body))
+}
+
+func checkBackendHealthCmd() tea.Cmd {
+	return func() tea.Msg {
+		return checkBackendHealth()
+	}
 }
 
 // --- Token Management ---
@@ -460,17 +589,17 @@ func (m model) View() string {
 }
 
 func (m model) tuiView() string {
-	loadingIndicator := ""
-	if m.loadingMenu {
-		loadingIndicator = fmt.Sprintf(" %s Loading...", loadingSlash[m.loadingFrame])
-	}
 	switch m.state {
 	case modeSelect:
 		out := m.splash() + "\n\n"
 		out += headerStyle.Render("Choose Interface Mode") + "\n\n"
 		for i, item := range modeOptions {
+			indicator := ""
+			if i == m.menuIdx && m.loadingMenu {
+				indicator = fmt.Sprintf(" %s", loadingSlash[m.loadingFrame])
+			}
 			if i == m.menuIdx {
-				out += selectedStyle.Render("> " + item) + "\n"
+				out += selectedStyle.Render("> " + item + indicator) + "\n"
 			} else {
 				out += "  " + item + "\n"
 			}
@@ -488,26 +617,30 @@ func (m model) tuiView() string {
 				out += "  " + item + "\n"
 			}
 		}
-		out += "\n[q] Quit " + loadingIndicator
+		out += "\n[q] Quit"
 		return out
 	case tokenMenu:
 		return boxStyle.Render("[Token Management] (ESC/q to return)\n" +
 			"1. Get Token\n2. Set Token\n3. Clear Token\n\n" + m.tokenStatus + m.tokenInput)
 	case fineTune:
-		status := ""
-		if m.loading {
-			status = fmt.Sprintf("Checking backend... %s", loadingSlash[m.loadingFrame])
-		} else if m.backendStatus != "" {
-			status = m.backendStatus
+		var display string
+		// While ping in progress, show loading message.
+		if m.backendStatus == "pending" {
+			display = "Checking backend..."
+		} else if m.tokenStatus == "" {
+			display = "Backend check complete."
+		} else {
+			if m.tokenStatus == "Enter your Hugging Face token:" {
+				display = m.tokenStatus + " " + m.tokenInput
+			} else {
+				display = m.tokenStatus
+			}
 		}
-		return boxStyle.Render("[Fine-tune] (ESC/q to return)\n\n" + status + "\n\n" +
-			"If prompted, enter your Hugging Face token.\n" +
-			"TODO: Implement model/dataset/config selection and REST call to backend.")
+		return boxStyle.Render("[Fine-tune] (ESC/q to return)\n\n" + display)
 	case logs:
-		return boxStyle.Render("[Logs] (ESC/q to return)\n\n" +
-			"Log file: Tune.log\n\n" +
-			strings.Join(m.logs, "\n") +
-			"\n\n[Open Tune.log in your file explorer to view or share logs.]")
+		logsContent := strings.Join(m.logs, "\n")
+		return boxStyle.Render("[Logs] (ESC/q to return, c to clear)\n\n" +
+			logsContent)
 	case help:
 		return boxStyle.Render("[Help] (ESC/q to return)\n\n" +
 			"Commands:\n" +
@@ -548,6 +681,8 @@ func (m model) tuiView() string {
 		return boxStyle.Render(headerStyle.Render("Confirm Fine-tune") +
 			fmt.Sprintf("\n\nModel: %s\nDataset: %s\nOutput: %s_adapter\n\nProceed? (y/n)\n%s",
 				modelOptions[m.selectedModel], datasetOptions[m.selectedDataset], m.outputName, m.confirmMsg))
+	case clearLogs:
+		return boxStyle.Render("[Logs Cleared]")
 	}
 	return ""
 }
@@ -610,6 +745,17 @@ func loadLogs() []string {
 		lines = lines[:len(lines)-1]
 	}
 	return lines
+}
+
+// --- Clear Logs ---
+func clearLogFile() tea.Cmd {
+	return func() tea.Msg {
+		err := os.Truncate("Tune.log", 0)
+		if err != nil {
+			return backendHealthMsg("Failed to clear log file: " + err.Error())
+		}
+		return backendHealthMsg("Log file cleared")
+	}
 }
 
 // --- Main ---

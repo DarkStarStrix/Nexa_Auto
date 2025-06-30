@@ -1,14 +1,29 @@
 import os
+import sys
+import time
 import uuid
 
 import requests
 import torch
+import uvicorn
 from datasets import load_dataset
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from pydantic import BaseModel
 from transformers import AutoModelForCausalLM, AutoTokenizer, TrainingArguments, Trainer, AutoConfig
+import logging
 
 app = FastAPI(title="Nexa Auto Trainer Backend", version="1.0")
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('trainer_server.log'),
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+logger = logging.getLogger(__name__)
 
 jobs = {}
 SESSION_SERVER_URL = "http://127.0.0.1:8765"
@@ -26,13 +41,14 @@ class TrainRequest(BaseModel):
     model: str
     dataset: str
     output: str
+    local: bool = False
 
 @app.post("/train")
 def start_training(req: TrainRequest, background_tasks: BackgroundTasks):
     job_id = str(uuid.uuid4())
     log_path = f"nexa_output/train_{job_id}.log"
     jobs[job_id] = {"status": "running", "log": log_path}
-    background_tasks.add_task(run_training, req.model, req.dataset, req.output, log_path, job_id)
+    background_tasks.add_task(run_training, req.model, req.dataset, req.output, log_path, job_id, req.local)
     return {"job_id": job_id}
 
 def run_training(model_name, dataset_name, new_model_name, log_path, job_id):
@@ -108,8 +124,25 @@ def get_status(job_id: str):
 
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    try:
+        session_response = requests.get(f"{SESSION_SERVER_URL}/health", timeout=2)
+        session_status = session_response.ok
+    except Exception as e:
+        logger.error(f"Session server health check failed: {e}")
+        session_status = False
+
+    return {
+        "status": "ok" if session_status else "error",
+        "components": {
+            "session_server": "ok" if session_status else "error",
+            "trainer": "ok"
+        },
+        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
+    }
 
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("trainer_server:app", host="0.0.0.0", port=8770, reload=False)
+    logger.info("Starting trainer server...")
+    try:
+        uvicorn.run("trainer_server:app", host="0.0.0.0", port=8770, reload=False)
+    except Exception as e:
+        logger.error(f"Failed to start trainer server: {e}")

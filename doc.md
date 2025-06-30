@@ -156,11 +156,15 @@ go run main.go
 
 ## Roadmap
 
-- [ ] Docker support for reproducible training
-- [ ] Remote/cloud training (Kaggle, SSH, etc.)
-- [ ] Advanced logging and metrics
+- [x] Initial release with CLI and TUI
+- [x] Session-aware token management
+- [x] Local training with Hugging Face Trainer
+- [x] LoRA/PEFT support
+- [x] Basic hardware detection
+- [x] Remote training support (SSH, API)
+- [x] Remote/cloud training (Kaggle, SSH, etc.)
+- [x] Advanced logging and metrics
 - [ ] Model card auto-generation
-- [ ] Web UI (future)
 
 ---
 

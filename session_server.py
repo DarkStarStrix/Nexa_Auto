@@ -9,11 +9,12 @@ import os
 import time
 import secrets
 import logging
+import socket
 
 # --- Config ---
-TOKEN_EXPIRY_SECONDS = 1800  # 30 minutes
-SESSION_SECRET = secrets.token_bytes(32)  # 256-bit session secret
-NONCE_SIZE = 12  # AESGCM standard nonce size
+TOKEN_EXPIRY_SECONDS = 1800
+SESSION_SECRET = secrets.token_bytes(32)
+NONCE_SIZE = 12
 
 # --- Logging ---
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
@@ -27,7 +28,7 @@ token_store = {}
 
 # --- Helper functions ---
 def derive_key(secret: bytes) -> bytes:
-    # Derive a key for AESGCM from the session secret
+    """Derives a key from the secret using PBKDF2."""
     kdf = PBKDF2HMAC(
         algorithm=hashes.SHA256(),
         length=32,
@@ -50,7 +51,7 @@ def decrypt_token(enc: dict, key: bytes) -> str:
     return aesgcm.decrypt(nonce, ct, None).decode()
 
 def sign_token(token: str, timestamp: float) -> str:
-    # Simple HMAC signature for lifecycle
+    """Generates a HMAC signature for the token and timestamp."""
     import hmac
     sig = hmac.new(SESSION_SECRET, f"{token}:{timestamp}".encode(), digestmod="sha256").hexdigest()
     return sig
@@ -106,10 +107,17 @@ async def health():
     return {"status": "ok", "uptime": int(time.time())}
 
 @app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception):
+async def global_exception_handler(exc: Exception):
     logger.error(f"Unhandled error: {exc}")
     return JSONResponse(status_code=500, content={"error": str(exc)})
 
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("session_server:app", host="0.0.0.0", port=8765, reload=False)
+    logger.info("Starting Nexa Auto Session Manager...")
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        sock.bind(("0.0.0.0", 8765))
+        sock.close()
+        import uvicorn
+        uvicorn.run("session_server:app", host="0.0.0.0", port=8765, reload=False)
+    except OSError:
+        print("ERROR: Port 8765 is already in use. Please stop the other session_server instance or free the port before starting again.")
